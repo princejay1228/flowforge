@@ -24,6 +24,7 @@ export interface GenerateWorkflowInput {
   /** Pre-chunked, pre-selected document context, if any */
   documentContext?: DocumentChunk[];
   constraints?: string[];
+  apiKey?: string;
 }
 
 export interface GenerateWorkflowResult {

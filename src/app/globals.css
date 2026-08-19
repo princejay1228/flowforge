@@ -60,6 +60,9 @@
 
 body {
   background: var(--background);
+  background-image: radial-gradient(circle at top right, rgba(120, 50, 255, 0.05), transparent 40%),
+                    radial-gradient(circle at bottom left, rgba(50, 150, 255, 0.05), transparent 40%);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-sans);
 }

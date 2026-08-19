@@ -1,18 +1,12 @@
 import type { AIProvider, AIProviderName } from "@/types/ai";
+import { GeminiProvider } from "./providers/gemini.provider";
 
 /**
- * Provider registry. Concrete providers (Gemini, Qwen, DeepSeek, OpenAI)
- * are future development phases and are intentionally NOT implemented
- * here — see PROJECT_ROADMAP.md "AI architecture".
- *
- * When a provider is implemented, it should be registered here, e.g.:
- *
- *   import { GeminiProvider } from "./providers/gemini-provider";
- *   registry.gemini = new GeminiProvider();
- *
- * Nothing outside this module should import a concrete provider directly.
+ * Provider registry.
  */
-const registry: Partial<Record<AIProviderName, AIProvider>> = {};
+const registry: Partial<Record<AIProviderName, AIProvider>> = {
+  gemini: new GeminiProvider()
+};
 
 export function registerProvider(name: AIProviderName, provider: AIProvider): void {
   registry[name] = provider;
@@ -30,6 +24,17 @@ export function getProvider(name: AIProviderName): AIProvider {
 }
 
 export function getConfiguredProviderName(): AIProviderName {
-  const configured = process.env.AI_PROVIDER as AIProviderName | undefined;
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem("flowforge_settings");
+      if (stored) {
+        const settings = JSON.parse(stored);
+        if (settings.aiProvider) return settings.aiProvider as AIProviderName;
+      }
+    } catch {
+      // Ignore
+    }
+  }
+  const configured = process.env.NEXT_PUBLIC_AI_PROVIDER as AIProviderName | undefined;
   return configured ?? "gemini";
 }

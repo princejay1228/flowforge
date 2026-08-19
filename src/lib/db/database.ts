@@ -3,6 +3,7 @@ import type { Workspace, Project } from "@/types/workspace";
 import type { Member } from "@/types/member";
 import type { Workflow } from "@/types/workflow";
 import type { UploadedDocument } from "@/types/document";
+import type { User } from "@/types/auth";
 
 /**
  * FlowForge's client-side database, backed by IndexedDB via Dexie.js.
@@ -21,6 +22,7 @@ export class FlowForgeDatabase extends Dexie {
   members!: EntityTable<Member, "id">;
   workflows!: EntityTable<Workflow, "id">;
   documents!: EntityTable<UploadedDocument, "id">;
+  users!: EntityTable<User, "id">;
 
   constructor() {
     super("flowforge");
@@ -31,6 +33,10 @@ export class FlowForgeDatabase extends Dexie {
       members: "id, workspaceId, name",
       workflows: "id, workspaceId, projectId, domain, createdAt",
       documents: "id, workspaceId, projectId, status, uploadedAt",
+    });
+
+    this.version(2).stores({
+      users: "id, email",
     });
   }
 }

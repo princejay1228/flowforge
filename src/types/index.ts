@@ -4,6 +4,7 @@ export * from "./schedule";
 export * from "./workflow";
 export * from "./dfa";
 export * from "./workspace";
+export * from "./auth";
 export * from "./document";
 export * from "./ai";
 export * from "./validation";

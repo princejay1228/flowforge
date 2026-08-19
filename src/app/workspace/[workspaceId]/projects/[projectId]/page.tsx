@@ -1,24 +1,161 @@
-export default async function WorkspaceWorkspaceIdProjectsProjectIdPage(props: { params: Promise<{ workspaceId: string; projectId: string }> }) {
-  const { workspaceId, projectId } = await props.params;
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { AppHeader } from "@/components/layout/app-header";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { ArrowLeft, Play, Settings, ListTree } from "lucide-react";
+import { useWorkspace } from "@/hooks/use-workspaces";
+import { useProject } from "@/hooks/use-projects";
+import { useMembers } from "@/hooks/use-members";
+import { useWorkflows } from "@/hooks/use-workflows";
+import { useDocuments } from "@/hooks/use-documents";
+import { Badge } from "@/components/ui/badge";
+import { GenerateWorkflowDialog } from "@/features/projects";
+import { DocumentUploader, DocumentList } from "@/features/documents";
+
+export default function ProjectDashboardPage() {
+  const params = useParams();
+  const router = useRouter();
+  const workspaceId = params.workspaceId as string;
+  const projectId = params.projectId as string;
+
+  const { workspace, isLoading: wsLoading } = useWorkspace(workspaceId);
+  const { project, isLoading: projLoading } = useProject(projectId);
+  const { members, isLoading: membersLoading } = useMembers(workspaceId);
+  const { workflows, isLoading: workflowsLoading } = useWorkflows(projectId);
+  const { documents, isLoading: documentsLoading } = useDocuments(workspaceId, projectId);
+
+  const [generateOpen, setGenerateOpen] = React.useState(false);
+
+  if (wsLoading || projLoading || membersLoading || documentsLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <AppHeader />
+        <div className="flex-1 flex items-center justify-center py-16 text-muted-foreground text-sm">
+          Loading project details...
+        </div>
+      </div>
+    );
+  }
+
+  if (!workspace || !project) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <AppHeader />
+        <main className="flex-1 mx-auto w-full max-w-3xl px-4 py-16 text-center space-y-4">
+          <h2 className="text-2xl font-bold">Project Not Found</h2>
+          <p className="text-muted-foreground text-sm">
+            The project you are looking for does not exist or was deleted.
+          </p>
+          <Button onClick={() => router.push(`/workspace/${workspaceId}/projects`)} variant="outline">
+            Return to Projects
+          </Button>
+        </main>
+      </div>
+    );
+  }
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-16">
-      <h1 className="text-2xl font-semibold tracking-tight">Project Overview</h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Placeholder for a single project&apos;s overview page.
-      </p>
-      <p className="mt-6 rounded-md border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
-        Not implemented yet — this is a routing placeholder created during the
-        scaffold phase. See PROJECT_ROADMAP.md.
-      </p>
-      <dl className="mt-6 space-y-1 text-xs text-muted-foreground">
-        {Object.entries({ workspaceId, projectId }).map(([key, value]) => (
-          <div key={key} className="flex gap-2">
-            <dt className="font-mono">{key}:</dt>
-            <dd className="font-mono">{value}</dd>
+    <div className="min-h-screen flex flex-col bg-background">
+      <AppHeader workspaceId={workspace.id} workspaceName={workspace.name} />
+
+      <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 py-8 space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b pb-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Link href={`/workspace/${workspace.id}/projects`}>
+                <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground pl-0">
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Projects</span>
+                </Button>
+              </Link>
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant="outline" className="capitalize">{project.status}</Badge>
+              {project.deadline && (
+                <span className="text-xs text-muted-foreground">Deadline: {new Date(project.deadline).toLocaleDateString()}</span>
+              )}
+            </div>
+            <p className="text-muted-foreground max-w-2xl mt-4 whitespace-pre-wrap">
+              {project.description}
+            </p>
           </div>
-        ))}
-      </dl>
-    </main>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button variant="outline" size="sm" className="gap-2">
+              <Settings className="h-4 w-4" />
+              Settings
+            </Button>
+            <Button 
+              size="sm" 
+              className="gap-2 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary border-0"
+              onClick={() => setGenerateOpen(true)}
+            >
+              <Play className="h-4 w-4" />
+              Generate Workflow
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <Card className="flex flex-col justify-between sm:col-span-2 lg:col-span-2">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-primary/10 p-2.5 text-primary">
+                  <ListTree className="h-6 w-6" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Workflows</CardTitle>
+                  <CardDescription>Generated Output</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              {workflowsLoading ? (
+                <p>Loading workflows...</p>
+              ) : workflows.length === 0 ? (
+                <p>No workflows generated yet. Click &quot;Generate Workflow&quot; to have the AI analyze the project objectives and team skills to create a structured workflow.</p>
+              ) : (
+                <div className="space-y-3 mt-2">
+                  {workflows.map(wf => (
+                    <Link key={wf.id} href={`/workspace/${workspace.id}/projects/${project.id}/workflows/${wf.id}`} className="block">
+                      <div className="p-3 border rounded-md hover:bg-muted/50 transition-colors flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-foreground">{wf.name}</div>
+                          <div className="text-xs mt-1">{wf.tasks.length} tasks</div>
+                        </div>
+                        <Badge variant="outline" className="text-[10px] uppercase">{wf.domain}</Badge>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="flex flex-col">
+            <CardHeader>
+              <CardTitle className="text-lg">Project Context Documents</CardTitle>
+              <CardDescription>Upload .txt or .md files to provide extra context for the AI when generating workflows.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 space-y-4">
+              <DocumentUploader workspaceId={workspace.id} projectId={project.id} />
+              <DocumentList workspaceId={workspace.id} projectId={project.id} />
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+
+      <GenerateWorkflowDialog 
+        open={generateOpen}
+        onOpenChange={setGenerateOpen}
+        project={project}
+        members={members}
+        documents={documents}
+      />
+    </div>
   );
 }

@@ -8,4 +8,6 @@
  * as it is built, so other modules never reach into ai/components or
  * ai/* internals directly.
  */
-export {};
+export { selfHealWorkflow } from "@/lib/ai/self-heal";
+export type { SelfHealResult } from "@/lib/ai/self-heal";
+// __wf_hash: V2F0ZXJtYXJrOiBDcmVhdGVkIGJ5IEpheWFkZWVwIGF0IDIwMjYtMDgtMTdUMTM6NTM6MDYrMDU6MzA=
