@@ -14,7 +14,10 @@ import { WorkflowEditor } from "@/features/workflow";
 import { WorkflowGraph, DFAGraph, GanttChart } from "@/features/visualization";
 import { scheduleWorkflow } from "@/features/scheduler";
 import { buildWorkflowDFA } from "@/features/dfa";
+import { WorkflowComplexityBadge, calculateWorkflowComplexity } from "@/features/validation";
 import { ReportExportButton } from "@/features/reports";
+import { Badge } from "@/components/ui/badge";
+import { Clock, Layers, Sparkles } from "lucide-react";
 
 export default function WorkflowDashboardPage() {
   const params = useParams();
@@ -32,6 +35,7 @@ export default function WorkflowDashboardPage() {
 
   const schedule = React.useMemo(() => workflow ? scheduleWorkflow(workflow, members || []) : null, [workflow, members]);
   const dfa = React.useMemo(() => workflow ? buildWorkflowDFA(workflow) : null, [workflow]);
+  const complexity = React.useMemo(() => workflow ? calculateWorkflowComplexity(workflow) : null, [workflow]);
 
   if (wsLoading || projLoading || wfLoading || membersLoading) {
     return (
@@ -65,7 +69,7 @@ export default function WorkflowDashboardPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <AppHeader workspaceId={workspace.id} workspaceName={workspace.name} />
 
-      <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 py-8 space-y-8">
+      <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 py-8 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b pb-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -76,15 +80,46 @@ export default function WorkflowDashboardPage() {
                 </Button>
               </Link>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">Workflow Editor</h1>
-            <p className="text-muted-foreground max-w-2xl mt-4">
-              Review and tweak the AI-generated tasks and assignments.
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-3xl font-bold tracking-tight">{workflow.name}</h1>
+              <Badge variant="outline" className="capitalize">
+                {workflow.domain.replace(/_/g, " ")}
+              </Badge>
+              <WorkflowComplexityBadge workflow={workflow} />
+            </div>
+            <p className="text-muted-foreground max-w-3xl text-sm">
+              {workflow.description || "Review, simulate, and optimize deterministic workflow execution."}
             </p>
+
+            {/* Quick Engine Metrics Strip */}
+            <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1 flex-wrap">
+              <span className="flex items-center gap-1.5 font-medium text-foreground">
+                <Layers className="h-3.5 w-3.5 text-primary" />
+                {workflow.tasks.length} Tasks ({workflow.dependencies.length} Dependencies)
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1.5 font-medium text-foreground">
+                <Clock className="h-3.5 w-3.5 text-sky-500" />
+                {schedule ? `${schedule.totalDurationMinutes}m Total` : "Calculating schedule..."}
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1.5 font-medium text-rose-600 dark:text-rose-400">
+                <Sparkles className="h-3.5 w-3.5" />
+                {schedule ? `${schedule.criticalPathTaskIds.length} Critical Path Tasks` : "No schedule"}
+              </span>
+              {dfa && (
+                <>
+                  <span>•</span>
+                  <span>{dfa.states.length} DFA States ({dfa.transitions.length} Transitions)</span>
+                </>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <ReportExportButton 
               workflow={workflow}
               project={project}
+              members={members}
               schedule={schedule}
               dfa={dfa}
             />
@@ -123,7 +158,7 @@ export default function WorkflowDashboardPage() {
         </div>
 
         {activeTab === "editor" && <WorkflowEditor workflow={workflow} members={members} />}
-        {activeTab === "graph" && <WorkflowGraph workflow={workflow} />}
+        {activeTab === "graph" && <WorkflowGraph workflow={workflow} schedule={schedule} members={members} />}
         
         {activeTab === "schedule" && schedule && (
           <div className="space-y-4">
@@ -140,6 +175,7 @@ export default function WorkflowDashboardPage() {
         )}
 
         {activeTab === "dfa" && dfa && <DFAGraph dfa={dfa} />}
+
       </main>
     </div>
   );
