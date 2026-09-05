@@ -67,6 +67,11 @@ export function DFAStepperDialog({ workflow, open, onOpenChange }: DFAStepperDia
                 </Badge>
               )}
             </div>
+            {currentState?.lastCompletedTaskName && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Completed: <strong className="text-foreground">{currentState.lastCompletedTaskName}</strong>
+              </p>
+            )}
           </div>
           <Button variant="outline" size="sm" onClick={handleReset} className="gap-1.5 text-xs">
             <RotateCcw className="h-3.5 w-3.5" /> Reset
@@ -115,13 +120,19 @@ export function DFAStepperDialog({ workflow, open, onOpenChange }: DFAStepperDia
           </span>
           <div className="bg-slate-950 text-slate-100 p-3 rounded-lg text-xs font-mono max-h-36 overflow-y-auto space-y-1">
             <p className="text-slate-400">q0 = START</p>
-            {history.map((h, idx) => (
-              <p key={idx} className="flex items-center gap-1.5 text-emerald-400">
-                <span className="text-slate-500">[{idx + 1}]</span>
-                <span className="text-slate-300">δ(q, {h.symbolExecuted}) ➔</span>
-                <span className="font-semibold">{h.stateName}</span>
-              </p>
-            ))}
+            {history.map((h, idx) => {
+              const taskId = h.symbolExecuted?.replace("COMPLETE_", "");
+              const task = workflow.tasks.find((t) => t.id === taskId);
+              const label = task ? task.name : h.symbolExecuted;
+
+              return (
+                <p key={idx} className="flex items-center gap-1.5 text-emerald-400">
+                  <span className="text-slate-500">[{idx + 1}]</span>
+                  <span className="text-slate-300">δ(q, &quot;{label}&quot;) ➔</span>
+                  <span className="font-semibold">{h.stateName}</span>
+                </p>
+              );
+            })}
           </div>
         </div>
       </div>

@@ -146,8 +146,15 @@ export function validateWorkflowSemantics(workflow: Workflow, members: Member[] 
           path: `tasks[id=${task.id}].assignedMemberId`,
         });
       } else {
-        // 5. Skill Match
-        const missingSkills = task.requiredSkills.filter(s => !member.skills.includes(s));
+        // 5. Skill Match (flexible normalization)
+        const normalizeSkill = (sk: string) => sk.toLowerCase().replace(/[_\s-]+/g, "");
+        const memberSkillSet = new Set((member.skills || []).map(normalizeSkill));
+        
+        const missingSkills = (task.requiredSkills || []).filter(s => {
+          const norm = normalizeSkill(s);
+          return !memberSkillSet.has(norm) && !Array.from(memberSkillSet).some(msk => norm.includes(msk) || msk.includes(norm));
+        });
+
         if (missingSkills.length > 0) {
           issues.push({
             code: "skill_mismatch",
@@ -161,8 +168,10 @@ export function validateWorkflowSemantics(workflow: Workflow, members: Member[] 
     }
   }
 
+  const errors = issues.filter((i) => i.severity === "error");
+
   return {
-    valid: issues.length === 0,
+    valid: errors.length === 0,
     issues,
   };
 }

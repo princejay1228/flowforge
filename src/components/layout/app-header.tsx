@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { APP_NAME } from "@/constants";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 interface AppHeaderProps {
   workspaceId?: string;
@@ -47,6 +48,17 @@ export function AppHeader({ workspaceId, workspaceName }: AppHeaderProps) {
           {user && (
             <>
               <Link
+                href="/dashboard"
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                  pathname === "/dashboard" ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+                )}
+              >
+                <Layers className="h-4 w-4" />
+                <span className="hidden sm:inline">Dashboard</span>
+              </Link>
+
+              <Link
                 href="/workspace"
                 className={cn(
                   "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
@@ -58,16 +70,29 @@ export function AppHeader({ workspaceId, workspaceName }: AppHeaderProps) {
               </Link>
 
               {workspaceId && (
-                <Link
-                  href={`/workspace/${workspaceId}/members`}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
-                    pathname.includes("/members") ? "bg-accent text-accent-foreground" : "text-muted-foreground"
-                  )}
-                >
-                  <Users className="h-4 w-4" />
-                  <span className="hidden sm:inline">Members</span>
-                </Link>
+                <>
+                  <Link
+                    href={`/workspace/${workspaceId}/projects`}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                      pathname.includes("/projects") ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+                    )}
+                  >
+                    <FolderGit2 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Projects</span>
+                  </Link>
+
+                  <Link
+                    href={`/workspace/${workspaceId}/members`}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                      pathname.includes("/members") ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+                    )}
+                  >
+                    <Users className="h-4 w-4" />
+                    <span className="hidden sm:inline">Members</span>
+                  </Link>
+                </>
               )}
             </>
           )}
@@ -82,6 +107,8 @@ export function AppHeader({ workspaceId, workspaceName }: AppHeaderProps) {
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">Settings</span>
           </Link>
+
+          <ThemeToggle />
 
           {user ? (
             <div className="flex items-center gap-2 ml-4 pl-4 border-l">

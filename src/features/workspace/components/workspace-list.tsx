@@ -119,9 +119,20 @@ export function WorkspaceList({ workspaces, onEdit, onDelete, onCreateNew }: Wor
         <p className="text-sm text-muted-foreground mt-2 max-w-sm">
           Get started by creating your first workspace to organize team members and compilation projects.
         </p>
-        <Button className="mt-6" onClick={onCreateNew}>
-          Create Workspace
-        </Button>
+        <div className="flex gap-3 mt-6">
+          <Button onClick={onCreateNew}>
+            Create Workspace
+          </Button>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              const { seedDemoData } = await import("@/lib/db/seed");
+              await seedDemoData();
+            }}
+          >
+            Load Sample Data
+          </Button>
+        </div>
       </Card>
     );
   }

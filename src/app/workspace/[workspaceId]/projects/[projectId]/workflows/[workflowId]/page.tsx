@@ -174,7 +174,7 @@ export default function WorkflowDashboardPage() {
           </div>
         )}
 
-        {activeTab === "dfa" && dfa && <DFAGraph dfa={dfa} />}
+        {activeTab === "dfa" && dfa && <DFAGraph dfa={dfa} workflow={workflow} />}
 
       </main>
     </div>

@@ -7,12 +7,17 @@ export interface DFAState {
   isStart: boolean;
   isDead: boolean;
   completedTaskIds: string[];
+  completedTaskNames?: string[];
+  lastCompletedTaskId?: string;
+  lastCompletedTaskName?: string;
 }
 
 export interface DFATransition {
   fromStateId: string;
   toStateId: string;
-  symbol: string; // usually an event like 'COMPLETE_TASK_1'
+  symbol: string; // e.g. 'COMPLETE_task_1'
+  taskId: string;
+  taskName: string;
 }
 
 export interface DFA {
@@ -33,6 +38,7 @@ export interface DFA {
 export function buildWorkflowDFA(workflow: Workflow): DFA {
   const alphabet = workflow.tasks.map(t => `COMPLETE_${t.id}`);
   const allTaskIds = new Set(workflow.tasks.map(t => t.id));
+  const taskNameMap = new Map(workflow.tasks.map(t => [t.id, t.name]));
 
   // adjacency list for dependencies (dependsOn -> task)
   const requiredBy = new Map<string, string[]>();
@@ -63,13 +69,22 @@ export function buildWorkflowDFA(workflow: Workflow): DFA {
     return [...completed].sort().join(",");
   };
 
-  const createState = (completed: string[]): DFAState => {
+  const createState = (completed: string[], lastTaskId?: string, lastTaskName?: string): DFAState => {
     const id = getStateId(completed);
-    if (stateMap.has(id)) return stateMap.get(id)!;
+    if (stateMap.has(id)) {
+      const existing = stateMap.get(id)!;
+      if (!existing.lastCompletedTaskName && (lastTaskName || lastTaskId)) {
+        existing.lastCompletedTaskId = lastTaskId || existing.lastCompletedTaskId;
+        existing.lastCompletedTaskName = lastTaskName || (lastTaskId ? taskNameMap.get(lastTaskId) : existing.lastCompletedTaskName);
+      }
+      return existing;
+    }
 
     const isStart = completed.length === 0;
     const isAccept = completed.length === allTaskIds.size;
-    const isDead = false; // Dead states are added if a failure happens, but skipping for basic DFA
+    const isDead = false;
+
+    const resolvedTaskName = lastTaskName || (lastTaskId ? taskNameMap.get(lastTaskId) : undefined);
 
     const state: DFAState = {
       id,
@@ -78,6 +93,9 @@ export function buildWorkflowDFA(workflow: Workflow): DFA {
       isAccept,
       isDead,
       completedTaskIds: [...completed],
+      completedTaskNames: completed.map(tId => taskNameMap.get(tId) || tId),
+      lastCompletedTaskId: lastTaskId,
+      lastCompletedTaskName: resolvedTaskName,
     };
     
     states.push(state);
@@ -105,12 +123,14 @@ export function buildWorkflowDFA(workflow: Workflow): DFA {
 
         if (canExecute) {
           const nextCompleted = [...current.completedTaskIds, task.id];
-          const nextState = createState(nextCompleted);
+          const nextState = createState(nextCompleted, task.id, task.name);
           
           transitions.push({
             fromStateId: current.id,
             toStateId: nextState.id,
             symbol: `COMPLETE_${task.id}`,
+            taskId: task.id,
+            taskName: task.name,
           });
 
           if (!processed.has(nextState.id)) {
@@ -121,12 +141,7 @@ export function buildWorkflowDFA(workflow: Workflow): DFA {
     }
   }
 
-  // Find unreachable tasks
   const acceptStates = states.filter(s => s.isAccept);
-  if (acceptStates.length === 0) {
-    // If we can't reach accept state, there's a problem (likely a circular dependency or disconnected graph)
-    // We can mark a Dead state here if needed
-  }
 
   return {
     states,

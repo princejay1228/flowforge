@@ -70,6 +70,16 @@ export function WorkflowEditor({ workflow: initialWorkflow, members }: WorkflowE
     [workflow, members]
   );
 
+  const errors = React.useMemo(
+    () => validation.issues.filter((i) => i.severity === "error"),
+    [validation]
+  );
+
+  const warnings = React.useMemo(
+    () => validation.issues.filter((i) => i.severity === "warning"),
+    [validation]
+  );
+
   const membersById = React.useMemo(
     () => new Map(members.map((m) => [m.id, m])),
     [members]
@@ -84,7 +94,7 @@ export function WorkflowEditor({ workflow: initialWorkflow, members }: WorkflowE
   };
 
   const handleSelfHeal = () => {
-    const { repairedWorkflow, fixedIssuesCount, logs } = selfHealWorkflow(workflow);
+    const { repairedWorkflow, fixedIssuesCount, logs } = selfHealWorkflow(workflow, members);
     if (fixedIssuesCount > 0) {
       setWorkflow(repairedWorkflow);
       setHealNotice({ count: fixedIssuesCount, logs });
@@ -279,7 +289,7 @@ export function WorkflowEditor({ workflow: initialWorkflow, members }: WorkflowE
 
           <Button
             onClick={handleSave}
-            disabled={isSaving || !validation.valid}
+            disabled={isSaving || errors.length > 0}
             size="sm"
             className="gap-1.5"
           >
@@ -320,13 +330,13 @@ export function WorkflowEditor({ workflow: initialWorkflow, members }: WorkflowE
         </Card>
       )}
 
-      {/* Validation alert banners */}
-      {!validation.valid && (
+      {/* Structural / Semantic Blocking Errors */}
+      {errors.length > 0 && (
         <Card className="border-destructive/50 bg-destructive/5">
           <CardHeader className="py-3 flex flex-row items-center justify-between">
             <CardTitle className="text-sm text-destructive flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
-              Semantic Validation Failed ({validation.issues.length} Issues)
+              Semantic Validation Failed ({errors.length} Blocking Issue{errors.length > 1 ? "s" : ""})
             </CardTitle>
             <Button
               size="sm"
@@ -340,7 +350,7 @@ export function WorkflowEditor({ workflow: initialWorkflow, members }: WorkflowE
           </CardHeader>
           <CardContent className="pb-3 text-sm text-destructive/90 space-y-1">
             <ul className="list-disc pl-5">
-              {validation.issues.map((issue, i) => (
+              {errors.map((issue, i) => (
                 <li key={i}>{issue.message}</li>
               ))}
             </ul>
@@ -348,17 +358,27 @@ export function WorkflowEditor({ workflow: initialWorkflow, members }: WorkflowE
         </Card>
       )}
 
-      {validation.valid && validation.issues.length > 0 && (
+      {/* Advisory Warnings */}
+      {warnings.length > 0 && (
         <Card className="border-amber-500/50 bg-amber-500/5">
-          <CardHeader className="py-3">
-            <CardTitle className="text-sm text-amber-600 flex items-center gap-2">
+          <CardHeader className="py-3 flex flex-row items-center justify-between">
+            <CardTitle className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
-              Validation Warnings
+              Skill Allocation Advisories ({warnings.length})
             </CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleSelfHeal}
+              className="gap-1.5 text-xs bg-background hover:bg-muted border-amber-500/30 text-amber-600 dark:text-amber-400"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+              <span>Auto-Align Skills</span>
+            </Button>
           </CardHeader>
-          <CardContent className="pb-3 text-sm text-amber-700/90 space-y-1">
+          <CardContent className="pb-3 text-sm text-amber-700/90 dark:text-amber-300/90 space-y-1">
             <ul className="list-disc pl-5">
-              {validation.issues.map((issue, i) => (
+              {warnings.map((issue, i) => (
                 <li key={i}>{issue.message}</li>
               ))}
             </ul>

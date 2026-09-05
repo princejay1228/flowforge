@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { AppHeader } from "@/components/layout/app-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Play, Settings, ListTree } from "lucide-react";
+import { ArrowLeft, Play, Settings, ListTree, FileText } from "lucide-react";
 import { useWorkspace } from "@/hooks/use-workspaces";
 import { useProject } from "@/hooks/use-projects";
 import { useMembers } from "@/hooks/use-members";
@@ -84,33 +84,107 @@ export default function ProjectDashboardPage() {
               {project.description}
             </p>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Settings className="h-4 w-4" />
-              Settings
-            </Button>
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <Link href={`/workspace/${workspace.id}/projects/${project.id}/reports`}>
+              <Button variant="outline" size="sm" className="gap-2">
+                <FileText className="h-4 w-4 text-rose-500" />
+                <span>Audit Reports</span>
+              </Button>
+            </Link>
             <Button 
               size="sm" 
               className="gap-2 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary border-0"
               onClick={() => setGenerateOpen(true)}
             >
               <Play className="h-4 w-4" />
-              Generate Workflow
+              <span>Generate Workflow</span>
             </Button>
           </div>
+        </div>
+
+        {/* Engine Pipeline Analysis Tools */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Link href={`/workspace/${workspace.id}/projects/${project.id}/visualization`}>
+            <Card className="hover:border-primary/50 transition-all cursor-pointer h-full">
+              <CardHeader className="p-4 pb-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase text-muted-foreground">DAG Visualizer</span>
+                  <ListTree className="h-4 w-4 text-primary" />
+                </div>
+                <CardTitle className="text-base mt-1">Dependency Graph</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0 text-xs text-muted-foreground">
+                Topological rendering with critical path inspection and node tracking.
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href={`/workspace/${workspace.id}/projects/${project.id}/schedule`}>
+            <Card className="hover:border-primary/50 transition-all cursor-pointer h-full">
+              <CardHeader className="p-4 pb-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase text-muted-foreground">Critical Path</span>
+                  <Play className="h-4 w-4 text-sky-500" />
+                </div>
+                <CardTitle className="text-base mt-1">CPM Schedule & Gantt</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0 text-xs text-muted-foreground">
+                Earliest/latest start times, slack buffer analysis, and resource timeline.
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href={`/workspace/${workspace.id}/projects/${project.id}/dfa`}>
+            <Card className="hover:border-primary/50 transition-all cursor-pointer h-full">
+              <CardHeader className="p-4 pb-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase text-muted-foreground">Formal Language</span>
+                  <ListTree className="h-4 w-4 text-emerald-500" />
+                </div>
+                <CardTitle className="text-base mt-1">DFA State Machine</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0 text-xs text-muted-foreground">
+                Deterministic 5-tuple automaton with live interactive step simulator.
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href={`/workspace/${workspace.id}/projects/${project.id}/reports`}>
+            <Card className="hover:border-primary/50 transition-all cursor-pointer h-full">
+              <CardHeader className="p-4 pb-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase text-muted-foreground">Audit Engine</span>
+                  <FileText className="h-4 w-4 text-rose-500" />
+                </div>
+                <CardTitle className="text-base mt-1">Feasibility & PDF</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0 text-xs text-muted-foreground">
+                McCabe complexity analysis, validation rules, and exportable PDF audit.
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <Card className="flex flex-col justify-between sm:col-span-2 lg:col-span-2">
             <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-primary/10 p-2.5 text-primary">
-                  <ListTree className="h-6 w-6" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-primary/10 p-2.5 text-primary">
+                    <ListTree className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Workflows</CardTitle>
+                    <CardDescription>Compiled Pipelines</CardDescription>
+                  </div>
                 </div>
-                <div>
-                  <CardTitle className="text-lg">Workflows</CardTitle>
-                  <CardDescription>Generated Output</CardDescription>
-                </div>
+                {workflows.length > 0 && (
+                  <Link href={`/workspace/${workspace.id}/projects/${project.id}/visualization`}>
+                    <Button variant="ghost" size="sm" className="text-xs text-primary">
+                      View Visualizer →
+                    </Button>
+                  </Link>
+                )}
               </div>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
@@ -121,15 +195,24 @@ export default function ProjectDashboardPage() {
               ) : (
                 <div className="space-y-3 mt-2">
                   {workflows.map(wf => (
-                    <Link key={wf.id} href={`/workspace/${workspace.id}/projects/${project.id}/workflows/${wf.id}`} className="block">
-                      <div className="p-3 border rounded-md hover:bg-muted/50 transition-colors flex items-center justify-between">
-                        <div>
-                          <div className="font-medium text-foreground">{wf.name}</div>
-                          <div className="text-xs mt-1">{wf.tasks.length} tasks</div>
+                    <div key={wf.id} className="p-3 border rounded-md hover:bg-muted/50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <Link href={`/workspace/${workspace.id}/projects/${project.id}/workflows/${wf.id}`} className="font-semibold text-foreground hover:underline">
+                          {wf.name}
+                        </Link>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {wf.tasks.length} tasks • {wf.dependencies.length} dependencies
                         </div>
-                        <Badge variant="outline" className="text-[10px] uppercase">{wf.domain}</Badge>
                       </div>
-                    </Link>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[10px] uppercase">{wf.domain}</Badge>
+                        <Link href={`/workspace/${workspace.id}/projects/${project.id}/workflows/${wf.id}`}>
+                          <Button size="sm" variant="default" className="text-xs h-7 px-2.5">
+                            Editor
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}

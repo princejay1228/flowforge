@@ -9,7 +9,21 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className="h-full antialiased" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function() {
+              try {
+                var theme = localStorage.getItem('flowforge_theme');
+                if (theme === 'light' || theme === 'dark') {
+                  document.documentElement.classList.add(theme);
+                }
+              } catch (e) {}
+            })()`,
+          }}
+        />
+      </head>
       {/* 
         =========================================================
         FLOWFORGE ARCHITECTURE & SCAFFOLDING
